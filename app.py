@@ -48,7 +48,6 @@ def register():
 def login():
 
 	login_info = request.get_json()
-
         database_collection = db.users
 	database_users = database_collection.find_one({'email': login_info['email']})
 
