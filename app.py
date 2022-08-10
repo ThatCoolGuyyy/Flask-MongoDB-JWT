@@ -24,7 +24,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=8)
 
 @app.route('/', methods=["GET"])
 def index():
-	return "<h1>Welcome to our restful Api</h1>"
+	return "<p>Simple REST API</p>"
 
 
 @app.route('/register/', methods=["POST"])
@@ -32,13 +32,12 @@ def index():
 def register():
 
 	new_user = request.get_json()
-	user_pwd = hashlib.sha256(new_user['password'].encode("utf-8")).hexdigest()
-	new_user["password"] =  user_pwd
+	new_user["password"] = hashlib.sha256(new_user['password'].encode("utf-8")).hexdigest()
 
-	current_collection = db.users
-	doc = current_collection.find_one({"email": new_user["email"]})
+	database_collection = db.users
+	doc = database_collection.find_one({"email": new_user["email"]})
 	if not doc:
-		current_collection.insert_one(new_user)
+		database_collection.insert_one(new_user)
 		return jsonify({'msg': 'User created successfully'}), 201
 	else:
 		return jsonify({'msg': 'Username already exists'}), 409
@@ -49,13 +48,14 @@ def register():
 def login():
 
 	login_info = request.get_json()
-	current_collection = db.users
-	user_from_db = current_collection.find_one({'email': login_info['email']})
 
-	if user_from_db:
+        database_collection = db.users
+	database_users = database_collection.find_one({'email': login_info['email']})
+
+	if database_users:
 		encrpted_password = hashlib.sha256(login_info['password'].encode("utf-8")).hexdigest()
-		if encrpted_password == user_from_db['password']:
-			access_token = create_access_token(identity=str(user_from_db['_id']))
+		if encrpted_password == database_users['password']:
+			access_token = create_access_token(identity=str(database_users['_id']))
 			return jsonify(access_token=access_token), 200
 	return jsonify({'msg': 'The username or password is incorrect'}), 401
 
@@ -73,10 +73,10 @@ def create_template():
 		"body": template["body"]	
 	}
 
-	current_collection = db.users
-	temp = current_collection.find_one({"template_name": template["template_name"]})
+	database_collection = db.users
+	temp = database_collection.find_one({"template_name": template["template_name"]})
 	if not temp:
-		current_collection.insert_one(template)
+		database_collection.insert_one(template)
 		return jsonify({'msg': 'Template created successfully'}), 201
 	else:
 		return jsonify({'msg': 'Template already in collection'}), 409
@@ -89,14 +89,14 @@ def retrieve_all_templates():
 	get_jwt_identity()
 
 	holder = list()
-	current_collection = db.users
+	database_collection = db.users
 
-	for i in current_collection.find():
+	for i in database_collection.find():
 		holder.append(i)
 		i['_id'] = str(i['_id'])
 
 	json_data = dumps(str(holder))
-	return jsonify({'msg': 'Templates fetched successfully', 'data':json_data}), 200
+	return jsonify({'msg': 'Templates fetch successful', 'data':json_data}), 200
 
 
 @app.route('/template/<id>', methods=["GET"])
@@ -105,12 +105,12 @@ def retrieve_one_template(id):
 
 	get_jwt_identity()
 
-	current_collection = db.users
-	data = dumps(current_collection.find_one({"_id":ObjectId(id)}))
+	database_collection = db.users
+	data = dumps(database_collection.find_one({"_id":ObjectId(id)}))
 	if data:
-		return jsonify({'msg': 'Template fetched successfully', 'data':data}), 200
+		return jsonify({'msg': 'Template fetch successful', 'data':data}), 200
 	else:
-		return jsonify({'msg': 'No such template in current collection'}), 500
+		return jsonify({'msg': 'Template does not exist in current collection'}), 500
 		
 
 @app.route('/template/<id>', methods=["PUT"])
@@ -121,13 +121,13 @@ def update_data(id):
 
 	req = request.get_json()
 
-	current_collection = db.users
-	template = current_collection.find_one({"_id":ObjectId(id)})
+	database_collection = db.users
+	template = database_collection.find_one({"_id":ObjectId(id)})
 	if template:
-		current_collection.update_one({"_id": template['_id']}, {'$set': {'template_name': req.get('template_name'), 'subject': req.get('subject'), 'body': req.get('body')}})
+		database_collection.update_one({"_id": template['_id']}, {'$set': {'template_name': req.get('template_name'), 'subject': req.get('subject'), 'body': req.get('body')}})
 		return jsonify({'msg': 'template successfully updated.'}), 200
 	else:
-		return jsonify({'msg': 'nothing to update'}), 200
+		return jsonify({'msg': 'nothing update applicable'}), 200
 
 
 @app.route('/template/<id>', methods=["DELETE"])
@@ -136,13 +136,13 @@ def delete(id):
 
 	get_jwt_identity()
 
-	current_collection = db.users
-	template = current_collection.find_one({"_id":ObjectId(id)})
+	database_collection = db.users
+	template = database_collection.find_one({"_id":ObjectId(id)})
 	if template:
-		current_collection.delete_one(template)
+		database_collection.delete_one(template)
 		return jsonify({'msg': 'template successfully removed'}), 200
 	else:
-		return jsonify({'msg': 'template not found in collection'}), 500
+		return jsonify({'msg': 'template missing from collection'}), 404
 	
 
 if __name__ == '__main__':
