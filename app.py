@@ -3,6 +3,7 @@ import hashlib
 from bson.json_util import dumps
 import datetime
 from flask_cors import cross_origin
+from db import *
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from flask import Flask, request, jsonify
@@ -19,10 +20,6 @@ app = Flask(__name__)
 jwt = JWTManager(app)
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=8)
-
-
-client = MongoClient(os.getenv("CONNECTION_STRING"))
-db = client[os.getenv("DB_NAME")]
 
 
 @app.route('/', methods=["GET"])
