@@ -50,7 +50,6 @@ def login():
 	login_info = request.get_json()
         database_collection = db.users
 	database_users = database_collection.find_one({'email': login_info['email']})
-
 	if database_users:
 		encrpted_password = hashlib.sha256(login_info['password'].encode("utf-8")).hexdigest()
 		if encrpted_password == database_users['password']:
